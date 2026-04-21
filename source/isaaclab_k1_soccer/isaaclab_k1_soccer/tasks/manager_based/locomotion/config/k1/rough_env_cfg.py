@@ -14,6 +14,8 @@ from isaaclab.utils import configclass
 
 import isaaclab_tasks.manager_based.locomotion.velocity.mdp as mdp
 from isaaclab_tasks.manager_based.locomotion.velocity.velocity_env_cfg import LocomotionVelocityRoughEnvCfg, RewardsCfg
+from .mdp.rewards import minimum_height
+
 
 ##
 # K1 robot asset configuration
@@ -21,7 +23,7 @@ from isaaclab_tasks.manager_based.locomotion.velocity.velocity_env_cfg import Lo
 
 _K1_USD_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
-    "../../../../../../../../assets_soccer/booster_robotics_robots/K1/K1_locomotion.usd",
+    "../../../../../../../../assets_soccer/booster_robotics_robots/K1/K1_22dof.usd",
 )
 
 K1_LOCOMOTION_CFG = ArticulationCfg(
@@ -51,7 +53,17 @@ K1_LOCOMOTION_CFG = ArticulationCfg(
             ".*_Hip_Yaw": 0.0,
             ".*_Knee_Pitch": 0.52,
             ".*_Ankle_Pitch": -0.26,
-            ".*_Ankle_Roll": 0.0,
+            ".*_Ankle_Roll": 0.0,   
+            "AAHead_yaw" : 0.0,
+            "Head_pitch" : 0.0,
+            "ALeft_Shoulder_Pitch": 0.0,
+            "ARight_Shoulder_Pitch": 0.0,
+            "Left_Shoulder_Roll": -0.7853981634 * 1.75,
+            "Left_Elbow_Pitch": 0.0,
+            "Left_Elbow_Yaw": 0.0,
+            "Right_Shoulder_Roll": 0.7853981634 * 1.75,
+            "Right_Elbow_Pitch": 0.0,
+            "Right_Elbow_Yaw": 0.0,       
         },
         joint_vel={".*": 0.0},
     ),
@@ -100,6 +112,18 @@ K1_LOCOMOTION_CFG = ArticulationCfg(
             stiffness=20.0,
             damping=2.0,
             armature=0.01,
+        ),
+        "arms": ImplicitActuatorCfg(
+            joint_names_expr=[
+                ".*_Shoulder_Pitch",
+                ".*_Shoulder_Roll",
+                ".*_Elbow_Pitch",
+                ".*_Elbow_Yaw",
+            ],
+            effort_limit_sim=100.0,
+            velocity_limit_sim=50.0,
+            stiffness=40.0,
+            damping=10.0,
         ),
     },
 )
@@ -151,6 +175,12 @@ class K1Rewards(RewardsCfg):
         weight=-0.2,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_Hip_Roll"])},
     )
+    # 追加　dof_pos_limits_arm
+    dof_pos_limits_arm = RewTerm(
+        func=mdp.joint_pos_limits,
+        weight=-0.2,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_Shoulder_Pitch",".*_Shoulder_Roll",".*_Elbow_Pitch",".*_Elbow_Yaw"])},
+    )
     joint_deviation_hip = RewTerm(
         func=mdp.joint_deviation_l1,
         weight=-0.1,
@@ -160,6 +190,22 @@ class K1Rewards(RewardsCfg):
         func=mdp.joint_deviation_l1,
         weight=-0.1,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_Ankle_Pitch", ".*_Ankle_Roll"])},
+    )
+    # 追加　joint_deviation_arm
+    joint_deviation_arm = RewTerm(
+        func=mdp.joint_deviation_l1,
+        weight=-0.1,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_Shoulder_Pitch",".*_Shoulder_Roll",".*_Elbow_Pitch",".*_Elbow_Yaw"])},
+    )
+    # 追加：最小高さペナルティの定義
+    base_height_penalty = RewTerm(
+        func=minimum_height,
+        weight=-1.0, # 最初は小さめの負の値で試すのがおすすめ
+        params={
+            "min_height": 0.45, # K1の初期値が0.6なので、少し余裕を持たせた値
+            "asset_cfg": SceneEntityCfg("robot"),
+            "sensor_cfg": None, 
+        },
     )
 
 
