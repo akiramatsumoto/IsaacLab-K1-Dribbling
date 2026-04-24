@@ -36,13 +36,6 @@ class K1FlatEnvCfg(K1RoughEnvCfg):
             "robot", joint_names=[".*_Hip_.*", ".*_Ankle_.*"]
         )
 
-        self.commands.base_velocity.heading_command = True
-        # Commands
-        self.commands.base_velocity.ranges.lin_vel_x = (-1.0, 1.0)
-        # self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
-        self.commands.base_velocity.ranges.lin_vel_y = (-1.0, 1.0)
-        self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
-        self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)
 
 
 class K1FlatEnvCfg_PLAY(K1FlatEnvCfg):
@@ -55,7 +48,7 @@ class K1FlatEnvCfg_PLAY(K1FlatEnvCfg):
         self.events.base_external_force_torque = None
         self.events.push_robot = None
 
-        self.commands.base_velocity.ranges.lin_vel_x = (1.0, 1.0)
+        self.commands.base_velocity.ranges.lin_vel_x = (0.0, 0.0)
         # self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
         self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
         self.commands.base_velocity.ranges.ang_vel_z = (0.0, 0.0)

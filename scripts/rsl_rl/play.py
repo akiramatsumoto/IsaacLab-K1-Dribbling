@@ -2,6 +2,9 @@
 # All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 
+# Todo argparseとかで引数として操作モードを選べるように
+# Todo 角速度を変えてもその場回転しない問題を解決する
+
 import argparse
 import sys
 import os
@@ -195,26 +198,29 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg: RslRlBaseRunnerCfg):
 
         x_vel, y_vel, ang_vel, heading, use_heading = controller.get_commands()
 
-        try:
-            vel_term = env.unwrapped.command_manager.get_term("base_velocity")
-            vel_term.command[:, 0] = x_vel
-            vel_term.command[:, 1] = y_vel
+        def apply_commands():
+            try:
+                vel_term = env.unwrapped.command_manager.get_term("base_velocity")
+                vel_term.command[:, 0] = x_vel
+                vel_term.command[:, 1] = y_vel
+                if use_heading:
+                    vel_term.command[:, 2] = 0.0
+                    vel_term.command[:, 3] = heading
+                else:
+                    vel_term.command[:, 2] = ang_vel
+                # resampleで上書きされないよう時間を伸ばす
+                vel_term.cfg.resampling_time_range = (1e9, 1e9)
+            except Exception:
+                pass
 
-            if use_heading:
-                # heading モード: command[:,2] に heading 角を直接セット
-                # (Isaac Lab の UniformVelocityCommand は index 3 が heading の場合あり、
-                #  タスク定義に合わせて調整してください)
-                vel_term.command[:, 2] = 0.0      # ang_vel は無効化
-                vel_term.command[:, 3] = heading  # heading (rad)
-            else:
-                vel_term.command[:, 2] = ang_vel
-        except Exception:
-            pass
+        apply_commands()  # step前
 
         with torch.inference_mode():
             actions = policy(obs)
-            obs, _, dones, _ = env.step(actions)
+            obs, _, dones, _ = env.step(actions)  # ← ここでresampleが走る
             policy_nn.reset(dones)
+
+        apply_commands()  # step後に再書き込みで確実に上書き
 
         sleep_time = dt - (time.time() - start_time)
         if args_cli.real_time and sleep_time > 0:
