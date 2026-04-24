@@ -7,6 +7,7 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.utils import configclass
 
 from .rough_env_cfg import K1RoughEnvCfg
+import math
 
 
 @configclass
@@ -35,10 +36,12 @@ class K1FlatEnvCfg(K1RoughEnvCfg):
             "robot", joint_names=[".*_Hip_.*", ".*_Ankle_.*"]
         )
 
+        self.commands.base_velocity.heading_command = True
         # Commands
         self.commands.base_velocity.ranges.lin_vel_x = (0.0, 1.0)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
         self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
+        # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)
 
 
 class K1FlatEnvCfg_PLAY(K1FlatEnvCfg):
