@@ -70,7 +70,6 @@ class K1CriticCfg(ObsGroup):
     joint_vel = ObsTerm(func=mdp.joint_vel_rel)
     actions = ObsTerm(func=mdp.last_action)
     gait_phase = ObsTerm(func=phase_obs, params={"phase_freq": 2.0})
-    height_scan = ObsTerm(func=mdp.height_scan, params={"sensor_cfg": SceneEntityCfg("height_scanner")})
 
     def __post_init__(self):
         self.enable_corruption = False # Criticにノイズは不要

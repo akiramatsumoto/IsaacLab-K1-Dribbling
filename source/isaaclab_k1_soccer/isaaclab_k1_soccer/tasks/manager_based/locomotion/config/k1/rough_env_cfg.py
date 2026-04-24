@@ -27,6 +27,7 @@ from isaaclab_tasks.manager_based.locomotion.velocity.velocity_env_cfg import (
 # 注意: これらの関数が .mdp フォルダ内に存在することを確認してください
 from .mdp import feet_phase, phase_obs
 from .mdp.rewards import minimum_height
+from .mdp.observations import K1PolicyCfg, K1CriticCfg
 
 ##
 # 基本設定
@@ -118,17 +119,8 @@ K1_LOCOMOTION_CFG = ArticulationCfg(
 
 @configclass
 class K1ObservationsCfg(ObservationsCfg):
-    """K1の観測。ポリシーに位相エンコーディングを追加。"""
-
-    @configclass
-    class K1PolicyCfg(ObservationsCfg.PolicyCfg):
-        # 位相情報を観測に追加（これがないと位相報酬に反応しにくい）
-        gait_phase = ObsTerm(
-            func=phase_obs,
-            params={"phase_freq": _PHASE_FREQ},
-        )
-
     policy: K1PolicyCfg = K1PolicyCfg()
+    critic: K1CriticCfg = K1CriticCfg()
 
 # ---------------------------------------------------------------------------
 # Rewards
@@ -189,7 +181,7 @@ class K1Rewards(RewardsCfg):
     )
     dof_pos_limits_arm = RewTerm(
         func=mdp.joint_pos_limits,
-        weight=-0.2,
+        weight=-0.5,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_Shoulder_Pitch",".*_Shoulder_Roll",".*_Elbow_Pitch",".*_Elbow_Yaw"])},
     )
     
@@ -200,7 +192,7 @@ class K1Rewards(RewardsCfg):
     )
     joint_deviation_arm = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-0.1,
+        weight=-0.5,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_Shoulder_Pitch",".*_Shoulder_Roll",".*_Elbow_Pitch",".*_Elbow_Yaw"])},
     )
 
