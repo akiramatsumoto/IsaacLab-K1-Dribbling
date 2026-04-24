@@ -53,13 +53,6 @@ class K1PolicyCfg(ObsGroup):
     
     # 整理した位相観測
     gait_phase = ObsTerm(func=phase_obs, params={"phase_freq": 2.0}) # 頻度は適宜調整
-    
-    height_scan = ObsTerm(
-        func=mdp.height_scan,
-        params={"sensor_cfg": SceneEntityCfg("height_scanner")},
-        noise=Unoise(n_min=-0.1, n_max=0.1),
-        clip=(-1.0, 1.0),
-    )
 
     def __post_init__(self):
         self.enable_corruption = True
