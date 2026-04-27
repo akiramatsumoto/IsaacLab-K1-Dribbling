@@ -8,6 +8,7 @@ from isaaclab.utils import configclass
 
 from .rough_env_cfg import K1RoughEnvCfg
 import math
+from .mdp.commands import DiscreteVelocityCommand, DiscreteVelocityCommandCfg
 
 
 @configclass
@@ -35,7 +36,25 @@ class K1FlatEnvCfg(K1RoughEnvCfg):
         self.rewards.dof_torques_l2.params["asset_cfg"] = SceneEntityCfg(
             "robot", joint_names=[".*_Hip_.*", ".*_Ankle_.*"]
         )
-
+        self.commands.base_velocity = DiscreteVelocityCommandCfg(
+            asset_name="robot",
+            resampling_time_range=(10.0, 10.0),
+            heading_command=True,
+            heading_control_stiffness=0.5,
+            rel_standing_envs=0.02,
+            rel_heading_envs=1.0,
+            high_vel=1.0,
+            low_vel_max=0.4,
+            high_ang_vel=1.0,
+            low_ang_vel_max=0.4,
+            high_prob=0.5,
+            ranges=DiscreteVelocityCommandCfg.Ranges(
+                lin_vel_x=(-1.0, 1.0),   # _resample で上書きされるので実質不使用
+                lin_vel_y=(-1.0, 1.0),
+                ang_vel_z=(-1.0, 1.0),
+                heading=(-math.pi, math.pi),
+            ),
+        )
 
 
 class K1FlatEnvCfg_PLAY(K1FlatEnvCfg):
@@ -47,9 +66,3 @@ class K1FlatEnvCfg_PLAY(K1FlatEnvCfg):
         self.observations.policy.enable_corruption = False
         self.events.base_external_force_torque = None
         self.events.push_robot = None
-
-        self.commands.base_velocity.ranges.lin_vel_x = (0.0, 0.0)
-        # self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
-        self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
-        self.commands.base_velocity.ranges.ang_vel_z = (0.0, 0.0)
-        self.commands.base_velocity.ranges.heading = (0.0, 0.0)

@@ -5,3 +5,4 @@
 
 from .observations import *
 from .rewards import *
+from .commands import DiscreteVelocityCommand, DiscreteVelocityCommandCfg

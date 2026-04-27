@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import ContactSensor
 from isaaclab.utils.math import quat_rotate_inverse, yaw_quat, euler_xyz_from_quat, wrap_to_pi
+from isaaclab.utils.math import quat_apply_inverse, yaw_quat
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
 
@@ -131,3 +132,33 @@ def feet_phase(
     reward *= cmd_speed > 0.1
 
     return reward
+
+def track_lin_vel_xy_discrete_exp(
+    env,
+    std: float,
+    command_name: str,
+    stop_std: float = 0.1,
+    stop_threshold: float = 0.05,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    asset = env.scene[asset_cfg.name]
+    vel_yaw = quat_apply_inverse(yaw_quat(asset.data.root_quat_w), asset.data.root_lin_vel_w[:, :3])
+    
+    cmd = env.command_manager.get_command(command_name)[:, :2]
+    actual = vel_yaw[:, :2]
+    
+    error = torch.sum(torch.square(cmd - actual), dim=1)
+    is_zero = cmd.norm(dim=-1) < stop_threshold
+
+    reward_moving = torch.exp(-error / std ** 2)
+    reward_stop = torch.exp(-actual.norm(dim=-1) ** 2 / stop_std ** 2)
+
+    return torch.where(is_zero, reward_stop, reward_moving)
+    
+__all__ = [
+    "minimum_height",
+    "track_lin_vel_xy_discrete_exp",
+    "track_ang_vel_z_discrete_exp",
+    "feet_distance",
+    "feet_phase",
+]

@@ -27,7 +27,9 @@ from isaaclab_tasks.manager_based.locomotion.velocity.velocity_env_cfg import (
 # 注意: これらの関数が .mdp フォルダ内に存在することを確認してください
 from .mdp import feet_phase, phase_obs
 from .mdp.rewards import minimum_height
+from .mdp.rewards import track_lin_vel_xy_discrete_exp, track_ang_vel_z_discrete_exp
 from .mdp.observations import K1PolicyCfg, K1CriticCfg
+from .mdp.commands import DiscreteVelocityCommand, DiscreteVelocityCommandCfg
 
 ##
 # 基本設定
@@ -226,11 +228,9 @@ class K1RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         # Randomization
         self.events.reset_robot_joints.params["position_range"] = (1.0, 1.0)
         self.events.base_external_force_torque.params["asset_cfg"].body_names = ["Trunk"]
-        
-        # 不要なイベントの無効化（2番目のコードを優先）
-        self.events.push_robot = None
-        self.events.add_base_mass = None
-        self.events.base_com = None
+        self.events.add_base_mass.params["asset_cfg"].body_names = ["Trunk"]
+        self.events.base_com.params["asset_cfg"].body_names = ["Trunk"]
+
 
         # Rewards の微調整
         self.rewards.lin_vel_z_l2.weight = 0.0
