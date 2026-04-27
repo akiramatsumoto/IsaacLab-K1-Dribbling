@@ -177,7 +177,7 @@ def track_ang_vel_z_discrete_exp(
 
     return torch.where(is_zero, reward_stop, reward_moving)
 
-    def joint_mirror_symmetry(
+def joint_mirror_symmetry(
         env,
         asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
     ) -> torch.Tensor:
@@ -222,5 +222,5 @@ __all__ = [
     "track_ang_vel_z_discrete_exp",
     "feet_distance",
     "feet_phase",
-    "symmetric_lateral_motion",
+    "joint_mirror_symmetry",
 ]
