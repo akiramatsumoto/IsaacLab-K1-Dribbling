@@ -27,7 +27,7 @@ from isaaclab_tasks.manager_based.locomotion.velocity.velocity_env_cfg import (
 # 注意: これらの関数が .mdp フォルダ内に存在することを確認してください
 from .mdp import feet_phase, phase_obs
 from .mdp.rewards import minimum_height
-from .mdp.rewards import track_lin_vel_xy_discrete_exp, track_ang_vel_z_discrete_exp
+from .mdp.rewards import track_lin_vel_xy_discrete_exp, track_ang_vel_z_discrete_exp, joint_mirror_symmetry
 from .mdp.observations import K1PolicyCfg, K1CriticCfg
 from .mdp.commands import DiscreteVelocityCommand, DiscreteVelocityCommandCfg
 
@@ -141,7 +141,7 @@ class K1Rewards(RewardsCfg):
     )
     track_ang_vel_z_exp = RewTerm(
         func=mdp.track_ang_vel_z_world_exp,
-        weight=2.0,
+        weight=3.5,
         params={"command_name": "base_velocity", "std": 0.5},
     )
 
@@ -206,6 +206,13 @@ class K1Rewards(RewardsCfg):
             "asset_cfg": SceneEntityCfg("robot"),
             "sensor_cfg": None, 
         },
+    )
+
+    joint_mirror_symmetry = RewTerm(
+        func=joint_mirror_symmetry,
+        # 地雷になる気がするのでいったん0.0
+        weight=0.0,
+        params={"asset_cfg": SceneEntityCfg("robot")},
     )
 
 # ---------------------------------------------------------------------------

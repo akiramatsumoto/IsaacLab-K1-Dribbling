@@ -154,11 +154,73 @@ def track_lin_vel_xy_discrete_exp(
     reward_stop = torch.exp(-actual.norm(dim=-1) ** 2 / stop_std ** 2)
 
     return torch.where(is_zero, reward_stop, reward_moving)
+
+
+def track_ang_vel_z_discrete_exp(
+    env,
+    command_name: str,
+    std: float,
+    stop_std: float = 0.1,
+    stop_threshold: float = 0.05,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    asset = env.scene[asset_cfg.name]
     
+    cmd = env.command_manager.get_command(command_name)[:, 2]
+    actual = asset.data.root_ang_vel_w[:, 2]
+    
+    error = torch.square(cmd - actual)
+    is_zero = cmd.abs() < stop_threshold
+
+    reward_moving = torch.exp(-error / std ** 2)
+    reward_stop = torch.exp(-actual ** 2 / stop_std ** 2)
+
+    return torch.where(is_zero, reward_stop, reward_moving)
+
+    def joint_mirror_symmetry(
+        env,
+        asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    ) -> torch.Tensor:
+        """左右の股関節・膝角度が鏡像対称になるほど高報酬。
+        
+        対称ペア:
+        Left_Hip_Pitch  ↔  Right_Hip_Pitch  (同符号)
+        Left_Hip_Roll   ↔  Right_Hip_Roll   (逆符号)
+        Left_Hip_Yaw    ↔  Right_Hip_Yaw    (逆符号)
+        Left_Knee_Pitch ↔  Right_Knee_Pitch (同符号)
+        """
+        asset = env.scene[asset_cfg.name]
+        joint_pos = asset.data.joint_pos
+
+        def get_joint(name):
+            idx = asset.find_joints(name)[0][0]
+            return joint_pos[:, idx]
+
+        l_hip_pitch  = get_joint("Left_Hip_Pitch")
+        r_hip_pitch  = get_joint("Right_Hip_Pitch")
+        l_hip_roll   = get_joint("Left_Hip_Roll")
+        r_hip_roll   = get_joint("Right_Hip_Roll")
+        l_hip_yaw    = get_joint("Left_Hip_Yaw")
+        r_hip_yaw    = get_joint("Right_Hip_Yaw")
+        l_knee       = get_joint("Left_Knee_Pitch")
+        r_knee       = get_joint("Right_Knee_Pitch")
+
+        # 同符号ペア: 差が0に近いほど対称
+        # 逆符号ペア: 和が0に近いほど対称
+        error = (
+            torch.square(l_hip_pitch - r_hip_pitch) +
+            torch.square(l_hip_roll  + r_hip_roll)  +
+            torch.square(l_hip_yaw   + r_hip_yaw)   +
+            torch.square(l_knee      - r_knee)
+        )
+
+        return torch.exp(-error / 0.1)
+
 __all__ = [
     "minimum_height",
     "track_lin_vel_xy_discrete_exp",
     "track_ang_vel_z_discrete_exp",
     "feet_distance",
     "feet_phase",
+    "symmetric_lateral_motion",
 ]
